@@ -665,7 +665,7 @@ This ensures that important safety decisions are not dependent solely on probabi
 
 A recorded GIF or video demonstrating the project can be linked below.
 
-**Demo:** `YOUR_GIF_OR_VIDEO_LINK`
+**Demo:** `(https://drive.google.com/file/d/1lCRFzmBgZLnG8uzL47Cxov2criOFE2CV/view?usp=sharing)`
 
 The demonstration covers:
 
