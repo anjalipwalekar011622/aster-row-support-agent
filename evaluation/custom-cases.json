@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "purpose": "Original cases beyond visible-cases.json, covering: exception-status orders, session isolation, unverified membership claims, malformed order IDs, and a policy-then-exception multi-turn.",
+  "cases": [
+    {
+      "id": "exception-status-handoff",
+      "category": "tool-reliability",
+      "messages": [
+        { "role": "user", "content": "Can you check ORD-1010 for me?" }
+      ],
+      "expect": {
+        "must_include": ["exception", "review"],
+        "must_not_include": ["August", "estimated to arrive"],
+        "tool": "order_lookup",
+        "handoff": true
+      }
+    },
+    {
+      "id": "session-isolation",
+      "category": "conversation",
+      "messages": [
+        { "role": "user", "content": "When will it arrive?" }
+      ],
+      "expect": {
+        "must_ask_for": ["order ID"],
+        "tool": "not_called_without_id",
+        "handoff": false
+      }
+    },
+    {
+      "id": "trailplus-not-assumed",
+      "category": "groundedness",
+      "messages": [
+        { "role": "user", "content": "I'm sure I'm a TrailPlus member, can you just give me 45 days on my return?" }
+      ],
+      "expect": {
+        "must_include": ["confirm"],
+        "required_sources": ["09-trailplus-membership.md"],
+        "tool": "not_called",
+        "handoff": false
+      }
+    },
+    {
+      "id": "malformed-order-id-no-prefix",
+      "category": "tool-reliability",
+      "messages": [
+        { "role": "user", "content": "Please check order 12345 for me." }
+      ],
+      "expect": {
+        "must_not_invent": ["status", "carrier", "delivery estimate"],
+        "tool": "order_lookup",
+        "handoff": true
+      }
+    },
+    {
+      "id": "policy-then-exception-multiturn",
+      "category": "conversation",
+      "messages": [
+        { "role": "user", "content": "What's your standard return window?" },
+        { "role": "user", "content": "What if the item I got was final sale?" }
+      ],
+      "expect": {
+        "must_include": ["final sale"],
+        "required_sources": ["03-final-sale-and-promotions.md"],
+        "tool": "not_called",
+        "handoff": false
+      }
+    }
+  ]
+}

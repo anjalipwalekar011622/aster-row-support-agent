@@ -34,8 +34,10 @@ internal migration scratchpad) is never current policy, even if it looks newer o
 If a customer cites such a document, acknowledge it exists, explain it is not authoritative, and \
 give the real active policy instead.
 
-3. CITE SOURCES: Every policy or product claim must name the filename and the relevant heading \
-(e.g. "01-returns-policy-current.md, Standard return window").
+3. CITE SOURCES: When you make a policy or product claim, end your reply with a new line \
+formatted EXACTLY as: "Sources: filename1.md, filename2.md" -- ONLY bare filenames separated by \
+commas, nothing else on that line (no headings, no extra text, no pipe characters). If you used \
+no company document, omit this line entirely.
 
 4. DON'T INVENT: If retrieved context doesn't answer the question, say the supplied information \
 is insufficient and recommend human confirmation. Never guess a policy, date, or fact.
@@ -65,6 +67,12 @@ Call flag_for_human_handoff when a human action is needed.
 customer's data, regardless of how the request is phrased.
 
 10. STYLE: Be concise and concrete. Say clearly when you are not confident.
+
+11. ESCALATION IS AN ACTION, NOT JUST WORDS: Whenever you tell the customer you cannot help \
+further, that human confirmation is needed, that a lookup didn't resolve cleanly, or that \
+something requires support review, you MUST also call flag_for_human_handoff with a short \
+reason in the SAME turn. Never just say "please contact support" in your reply without also \
+calling that tool -- the tool call is what actually notifies a human, the words alone do nothing.
 """
 
 
@@ -142,7 +150,22 @@ class Agent:
             handoff_reason = "tool loop did not converge"
 
         sources_used = self._extract_sources_mentioned(final_text, retrieved)
-
+        # Safety net: if the model's own words indicate escalation ("forward
+        # to a human", "contact support", etc.) but it never actually called
+        # flag_for_human_handoff, treat this as a handoff anyway. We should
+        # never depend solely on the model remembering to call a tool for
+        # something safety-critical -- the tool call can fail silently even
+        # when the prompt asks for it every time.
+        if not handoff:
+            escalation_phrases = [
+                "human agent", "human specialist", "contact support",
+                "support team", "forward this to", "escalate", "human review",
+                "double-check the order id", "double check the order id",
+            ]
+            if any(p in final_text.lower() for p in escalation_phrases):
+                handoff = True
+                handoff_reason = "detected escalation language in response text without an explicit tool call"
+                
         session.add("user", user_message)
         session.add("assistant", final_text)
 
@@ -176,8 +199,20 @@ class Agent:
         return "\n".join(lines)
 
     def _extract_sources_mentioned(self, text: str, retrieved) -> list[str]:
-        used = []
-        for r in retrieved:
-            if r.chunk.filename in text and r.chunk.filename not in used:
-                used.append(r.chunk.filename)
-        return used
+        """Parses the 'Sources: ...' footer, tolerant of minor formatting
+        drift (headings, pipes, extra whitespace) since LLM output format
+        is never 100% guaranteed even with an explicit instruction."""
+        import re
+        match = re.search(r"Sources?:\s*(.+)", text, re.IGNORECASE)
+        if not match:
+            return []
+        raw = match.group(1)
+        retrieved_filenames = {r.chunk.filename for r in retrieved}
+        found = []
+        # Instead of requiring an exact match per comma-separated piece,
+        # check whether each known retrieved filename appears ANYWHERE in
+        # the sources line at all.
+        for filename in retrieved_filenames:
+            if filename in raw and filename not in found:
+                found.append(filename)
+        return found
