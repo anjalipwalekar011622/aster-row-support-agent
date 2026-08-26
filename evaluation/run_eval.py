@@ -9,6 +9,8 @@ from __future__ import annotations
 import json
 import os
 import sys
+import argparse
+import re
 from dataclasses import dataclass, field
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -18,7 +20,7 @@ load_dotenv()
 from src.ingest import load_chunks
 from src.retrieval import Retriever
 from src.tools import OrderStore
-from src.llm import GroqLLM
+from src.llm import FakeLLM, GroqLLM
 from src.agent import Agent
 
 
@@ -30,12 +32,12 @@ class CaseResult:
     failures: list[str] = field(default_factory=list)
 
 
-def build_agent() -> Agent:
+def build_agent(use_fake: bool = False) -> Agent:
     base = os.path.join(os.path.dirname(__file__), "..")
     chunks = load_chunks(os.path.join(base, "knowledge-base"))
     retriever = Retriever(chunks)
     store = OrderStore(os.path.join(base, "data", "orders.json"))
-    return Agent(retriever, store, GroqLLM())
+    return Agent(retriever, store, FakeLLM() if use_fake else GroqLLM())
 
 
 def run_case(agent: Agent, case: dict) -> CaseResult:
@@ -57,6 +59,22 @@ def run_case(agent: Agent, case: dict) -> CaseResult:
     for s in expect.get("must_not_include", []):
         if s.lower() in text_l:
             failures.append(f"forbidden substring present: {s!r}")
+
+    # Concepts are semantic, not literal assertions. This intentionally
+    # modest matcher keeps offline evaluation deterministic while a real
+    # model remains the source of truth for answer quality.
+    concept_terms = {
+        "the order is cancelled": ("cancel",),
+        "it will not be shipped": ("not be shipped", "will not ship"),
+        "order was not found": ("not found", "couldn't find", "could not find"),
+        "check the order id or contact support": ("order id", "contact support", "double-check"),
+        "shipped with canada post": ("canada post",),
+        "delivery estimate is unavailable": ("estimate is unavailable", "no delivery estimate"),
+    }
+    for concept in expect.get("must_include_concepts", []):
+        terms = concept_terms.get(concept, tuple(w for w in re.findall(r"[a-z]+", concept.lower()) if len(w) > 4))
+        if not any(term in text_l for term in terms):
+            failures.append(f"missing concept: {concept!r}")
 
     for s in expect.get("required_sources", []):
         if s not in last_result.sources:
@@ -111,13 +129,17 @@ def load_cases() -> list[dict]:
 
 
 def main():
-    agent = build_agent()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--fake", action="store_true", help="Run offline with deterministic tool-routing behaviour")
+    args = parser.parse_args()
+    agent = build_agent(use_fake=args.fake)
     cases = load_cases()
     import time
     results = []
     for c in cases:
         results.append(run_case(agent, c))
-        time.sleep(1.5)  # small pause between cases to stay under Groq's free-tier rate limit
+        if not args.fake:
+            time.sleep(15)  # small pause between cases to stay under Groq's free-tier rate limit
 
     by_category: dict[str, list[CaseResult]] = {}
     for r in results:

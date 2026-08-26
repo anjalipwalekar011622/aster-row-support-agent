@@ -23,8 +23,28 @@ _AUTHORITY_WEIGHT = {
 }
 
 
+# A small, standard set of English "glue" words that carry no topical
+# meaning on their own. Without filtering these, BM25's rarity-based
+# scoring can mistake an incidental, meaningless match (e.g. the word
+# "long" happening to appear in an unrelated section) for a strong signal,
+# drowning out the one keyword that actually matters ("canada"). This is
+# especially visible on a small corpus like ours, where a common word can
+# accidentally look "rare" just by chance.
+_STOPWORDS = {
+    "a", "an", "the", "and", "or", "but", "if", "of", "at", "by", "for",
+    "with", "about", "against", "between", "into", "through", "during",
+    "to", "from", "up", "down", "in", "out", "on", "off", "over", "under",
+    "is", "are", "was", "were", "be", "been", "being", "do", "does", "did",
+    "will", "would", "should", "can", "could", "may", "might", "must",
+    "what", "which", "who", "whom", "this", "that", "these", "those",
+    "i", "you", "he", "she", "it", "we", "they", "my", "your", "his",
+    "her", "its", "our", "their", "how", "when", "where", "why",
+}
+
+
 def _tokenize(text: str) -> list[str]:
-    return re.findall(r"[a-z0-9]+", text.lower())
+    words = re.findall(r"[a-z0-9]+", text.lower())
+    return [w for w in words if w not in _STOPWORDS]
 
 
 @dataclass
