@@ -10,7 +10,7 @@ import requests
 
 
 class GroqLLM:
-    MODEL = "llama-3.1-8b-instant"
+    MODEL = "openai/gpt-oss-20b"
 
     def __init__(self, api_key: str | None = None):
         self.api_key = api_key or os.environ.get("GROQ_API_KEY")
@@ -30,6 +30,8 @@ class GroqLLM:
             },
             timeout=30,
         )
+        if resp.status_code != 200:
+            print("GROQ ERROR BODY:", resp.text)
         resp.raise_for_status()
         data = resp.json()
         choice = data["choices"][0]["message"]
