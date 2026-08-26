@@ -665,7 +665,7 @@ This ensures that important safety decisions are not dependent solely on probabi
 
 A recorded GIF or video demonstrating the project can be linked below.
 
-**Demo:** `https://drive.google.com/file/d/1lCRFzmBgZLnG8uzL47Cxov2criOFE2CV/view?usp=sharing`
+**Watch demo here:** (https://drive.google.com/file/d/1lCRFzmBgZLnG8uzL47Cxov2criOFE2CV/view?usp=sharing)
 
 The demonstration covers:
 
@@ -674,8 +674,6 @@ The demonstration covers:
 3. A multi-turn Canada shipping follow-up.
 4. A safe refusal/human handoff.
 5. The evaluation suite running.
-
-Replace `YOUR_GIF_OR_VIDEO_LINK` with the final recorded demo link before submission.
 
 ---
 
