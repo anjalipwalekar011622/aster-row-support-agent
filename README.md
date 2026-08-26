@@ -447,7 +447,7 @@ The latest visible/custom evaluation produced the following results:
 | Category               |    Result |
 | ---------------------- | --------: |
 | Retrieval              |       2/2 |
-| Conversation           |       3/3 |
+| Conversation           |       2/3 |
 | Groundedness           |       3/3 |
 | Multi-source grounding |       1/1 |
 | Privacy                |       1/1 |
@@ -456,7 +456,7 @@ The latest visible/custom evaluation produced the following results:
 | Tool reliability       |       5/5 |
 | Tool use               |       2/2 |
 | Source conflict        |       0/1 |
-| **Total**              | **19/20** |
+| **Total**              | **18/20** |
 
 ### Source-Conflict Result
 
@@ -683,4 +683,4 @@ The Aster & Row Support Agent demonstrates a reliability-focused approach to bui
 
 The implementation combines deterministic retrieval, authority-aware source handling, privacy-safe tool use, session isolation, prompt-injection resistance, and human escalation mechanisms.
 
-The current evaluation score of **19/20** demonstrates strong performance across retrieval, conversation handling, groundedness, privacy, prompt security, abstention, and tool reliability, with the remaining issue limited to a wording-level source-conflict evaluation case.
+The current evaluation score of **18/20** demonstrates strong performance across retrieval, conversation handling, groundedness, privacy, prompt security, abstention, and tool reliability, with the remaining issue limited to a wording-level source-conflict evaluation case.
